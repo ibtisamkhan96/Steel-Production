@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Steel: The Material That Built the Modern World — 2025 Data Dashboard</title>
+<meta name="description" content="Interactive data dashboard on global steel: production, grades, mechanical properties, real-world scale, and decarbonisation. By Ibtisam Ahmed Khan.">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700;800&display=swap');
+  :root{
+    --bg:#0c0f14; --card:#141922; --card2:#1a212c; --border:#27313f;
+    --text:#eef2f8; --muted:#9aa6b8; --steel:#8ba3bd; --molten:#ff7a4d;
+    --amber:#ffb13d; --teal:#34dbf0; --green:#3ee0a4; --red:#ff6363; --violet:#b79cff;
+    --z-tab:10;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--text);font-family:'Fira Sans',system-ui,sans-serif;min-height:100vh;line-height:1.55;
+    background-image:radial-gradient(ellipse 80% 50% at 20% -10%,rgba(255,122,77,.10),transparent),
+    radial-gradient(ellipse 80% 50% at 80% -10%,rgba(139,163,189,.12),transparent)}
+  .wrap{max-width:1280px;margin:0 auto;padding:32px 24px 60px}
+  header{text-align:center;margin-bottom:8px}
+  .eyebrow{font-family:'Fira Code',monospace;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--molten);font-weight:600;margin-bottom:12px}
+  h1{font-size:clamp(28px,4vw,46px);font-weight:800;letter-spacing:-1px;line-height:1.1;
+    background:linear-gradient(90deg,var(--steel) 10%,#fff 45%,var(--molten) 90%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .sub{color:var(--muted);font-size:15px;margin-top:10px;max-width:760px;margin-left:auto;margin-right:auto}
+  .tabs{display:flex;gap:8px;justify-content:center;margin:28px 0;flex-wrap:wrap;position:sticky;top:0;z-index:var(--z-tab);
+    padding:12px 0;background:linear-gradient(180deg,var(--bg) 70%,transparent)}
+  .tab{display:inline-flex;align-items:center;gap:9px;padding:10px 20px;border-radius:99px;border:1px solid var(--border);
+    background:var(--card);color:var(--muted);cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;
+    transition:background .2s,color .2s,border-color .2s,transform .2s}
+  .tab svg{width:17px;height:17px;flex-shrink:0}
+  .tab:hover{border-color:var(--molten);color:var(--text);transform:translateY(-2px)}
+  .tab:focus-visible{outline:2px solid var(--molten);outline-offset:2px}
+  .tab.active{background:linear-gradient(90deg,#b4451f,#41586f);color:#fff;border-color:transparent;
+    box-shadow:0 4px 20px rgba(255,122,77,.22)}
+  .panel{display:none;animation:fade .4s ease}
+  .panel.show{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px}
+  .kpi{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;
+    position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+  .kpi:hover{transform:translateY(-4px);box-shadow:0 8px 30px rgba(0,0,0,.4)}
+  .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--molten),var(--steel))}
+  .kpi .lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:600}
+  .kpi .val{font-size:30px;font-weight:800;font-family:'Fira Code',monospace;letter-spacing:-1px}
+  .kpi .delta{font-size:13px;margin-top:6px;font-weight:600}
+  .up{color:var(--green)} .down{color:var(--red)} .flat{color:var(--muted)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .grid .full{grid-column:1/-1}
+  @media(max-width:860px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:22px;transition:border-color .3s}
+  .card:hover{border-color:#33455c}
+  .card h3{font-size:16px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+  .card h3 svg{width:18px;height:18px;color:var(--molten)}
+  .card .note{font-size:12.5px;color:var(--muted);margin-bottom:14px}
+  .chartbox{position:relative;height:340px}
+  .chartbox.tall{height:430px}
+  .legendrow{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;font-size:12.5px;color:var(--muted);font-weight:600}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+  .tbl{width:100%;border-collapse:collapse;font-size:13px}
+  .tbl th{text-align:left;color:var(--muted);font-weight:600;padding:10px;border-bottom:1px solid var(--border);
+    text-transform:uppercase;letter-spacing:.5px;font-size:11px;position:sticky;top:0;background:var(--card)}
+  .tbl td{padding:11px 10px;border-bottom:1px solid #1b2330}
+  .tbl td.mono{font-family:'Fira Code',monospace}
+  .tbl tr{transition:background .15s}
+  .tbl tr:hover td{background:var(--card2)}
+  .pill{display:inline-block;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700}
+  .scroll{max-height:430px;overflow:auto;border-radius:12px}
+  /* scale comparison cards */
+  .cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px}
+  .cmpcard{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:26px;
+    display:flex;flex-direction:column;align-items:center;text-align:center;transition:transform .2s,border-color .2s}
+  .cmpcard:hover{transform:translateY(-4px);border-color:var(--molten)}
+  .cmpcard svg.icon{width:74px;height:74px;color:var(--steel);margin-bottom:14px}
+  .cmpcard .big{font-size:42px;font-weight:800;font-family:'Fira Code',monospace;color:var(--molten);letter-spacing:-1.5px;line-height:1}
+  .cmpcard .who{font-size:17px;font-weight:700;margin:10px 0 6px}
+  .cmpcard .desc{font-size:13px;color:var(--muted);line-height:1.5}
+  footer{margin-top:36px;text-align:center;color:var(--muted);font-size:12px;line-height:1.9}
+  .infobox{font-size:14px;line-height:1.8}
+  .infobox strong{color:#fff}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<!-- SVG icon symbols (reused via <use>) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 2.5 15.5 0 18M12 3c-2.5 2.5-2.5 15.5 0 18"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 13 9 5 9-5"/></symbol>
+  <symbol id="i-ruler" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15 15 3l6 6L9 21l-6-6Z"/><path d="M7 11l2 2M10 8l2 2M13 5l2 2"/></symbol>
+  <symbol id="i-scale" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 7h14M7 7l-3 7a3 3 0 0 0 6 0L7 7Zm10 0-3 7a3 3 0 0 0 6 0l-3-7Z"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 4 13c0-6 5-9 16-10 1 9-2 16-9 17Z"/><path d="M4 20c3-4 6-6 10-7"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/></symbol>
+  <symbol id="i-tower" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M9 22l3-20 3 20M7.5 8h9M6 14h12M8 22h8"/></symbol>
+  <symbol id="i-building" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 22V5l3-3 3 3v17M6 12H9M15 12h3M6 22V12H4v10M18 12v10h2V12M11 8h2M11 12h2M11 16h2"/></symbol>
+  <symbol id="i-car" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14M3 13l2-5a2 2 0 0 1 2-1.4h10A2 2 0 0 1 19 8l2 5v4H3v-4Z"/><circle cx="7.5" cy="17" r="1.8"/><circle cx="16.5" cy="17" r="1.8"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+</svg>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Materials Data Series · No. 01</div>
+    <h1>Steel: The Material That Built the Modern World</h1>
+    <div class="sub">~1.85 billion tonnes a year — more than every other metal combined. Who makes it, what kinds exist, how strong they are, what that tonnage actually looks like, and the race to make it clean. Full-Year 2024–25 (worldsteel) · Compiled June 2026</div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-p="production"><svg><use href="#i-globe"/></svg>Production &amp; Geography</button>
+    <button class="tab" data-p="scale"><svg><use href="#i-scale"/></svg>What 1.85 Bt Looks Like</button>
+    <button class="tab" data-p="types"><svg><use href="#i-layers"/></svg>Kinds of Steel</button>
+    <button class="tab" data-p="props"><svg><use href="#i-ruler"/></svg>Properties</button>
+    <button class="tab" data-p="green"><svg><use href="#i-leaf"/></svg>The Green Steel Race</button>
+  </nav>
+
+  <!-- PRODUCTION -->
+  <div class="panel show" id="production">
+    <div class="kpis">
+      <div class="kpi"><div class="lbl">World crude steel 2024</div><div class="val">1,882.6</div><div class="delta down">▼ 1.8% → 1,849 Mt in 2025</div></div>
+      <div class="kpi"><div class="lbl">China share</div><div class="val">53.4%</div><div class="delta flat">~1,005 Mt — more than rest of world</div></div>
+      <div class="kpi"><div class="lbl">India (the riser)</div><div class="val">149.6</div><div class="delta up">▲ +10% YoY · now clear #2</div></div>
+      <div class="kpi"><div class="lbl">Top 10 share</div><div class="val">~80%</div><div class="delta flat">Steel is geographically concentrated</div></div>
+    </div>
+    <div class="grid">
+      <div class="card full">
+        <h3><svg><use href="#i-globe"/></svg>2024 Crude Steel Production by Country (Mt)</h3>
+        <div class="note">China alone makes more steel than the other nine top producers combined. Orange marks the rising producer (India) against the mature ones.</div>
+        <div class="chartbox tall"><canvas id="countryBar"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>World Production Trend (Mt)</h3>
+        <div class="note">Output plateaued after the 2021 post-COVID peak. 2025 is the lowest since 2020 — mostly a Chinese-construction demand story.</div>
+        <div class="chartbox"><canvas id="trendLine"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Where Steel Is Used (global demand)</h3>
+        <div class="note">Over half of all steel goes into buildings and infrastructure. Steel demand is, basically, a proxy for construction.</div>
+        <div class="chartbox"><canvas id="enduseDonut"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCALE -->
+  <div class="panel" id="scale">
+    <div class="card full" style="margin-bottom:20px">
+      <h3><svg><use href="#i-scale"/></svg>1.85 billion tonnes is impossible to picture. So here it is in real objects.</h3>
+      <div class="note">Each figure below is annual world crude-steel output (~1,850 Mt) divided by the steel/iron mass of a familiar structure. Sources in footer.</div>
+      <div class="cmp">
+        <div class="cmpcard"><svg class="icon"><use href="#i-bolt"/></svg><div class="big">59 t</div><div class="who">every second</div><div class="desc">New steel is poured non-stop — about 59 tonnes a second, day and night, all year.</div></div>
+        <div class="cmpcard"><svg class="icon"><use href="#i-tower"/></svg><div class="big">183,000</div><div class="who">Eiffel Towers / year</div><div class="desc">At 10,100 t each, the world makes an Eiffel Tower's worth of steel roughly every 3 minutes.</div></div>
+        <div class="cmpcard"><svg class="icon"><use href="#i-building"/></svg><div class="big">31,000</div><div class="who">Empire State Buildings</div><div class="desc">Each skyscraper's frame is ~60,000 t of structural steel. We build that ~85 times a day.</div></div>
+        <div class="cmpcard"><svg class="icon"><use href="#i-car"/></svg><div class="big">~2 billion</div><div class="who">cars' worth</div><div class="desc">At ~0.9 t of steel per car, one year of output could body ~2 billion new vehicles.</div></div>
+      </div>
+    </div>
+    <div class="card full">
+      <h3><svg><use href="#i-scale"/></svg>Steel vs Every Other Metal (annual world production, Mt)</h3>
+      <div class="note">This is why steel gets its own category. It out-produces aluminium, copper, zinc, lead and nickel <strong>combined — many times over.</strong> Log-free, just raw tonnage.</div>
+      <div class="chartbox tall"><canvas id="metalsBar"></canvas></div>
+    </div>
+  </div>
+
+  <!-- TYPES -->
+  <div class="panel" id="types">
+    <div class="card full" style="margin-bottom:20px">
+      <h3><svg><use href="#i-layers"/></svg>The Four Families of Steel</h3>
+      <div class="note">"Steel" isn't one material — it's thousands of alloys of iron + carbon (+ other elements). Carbon content alone changes everything.</div>
+      <div class="grid">
+        <div class="infobox">
+          <strong>① Carbon steels</strong> (~90% of all steel). Iron + carbon. More carbon = harder &amp; stronger but more brittle.<br>
+          • Low / mild (&lt;0.25% C) — structural, sheet<br>
+          • Medium (0.25–0.6% C) — axles, gears<br>
+          • High (&gt;0.6% C) — springs, blades<br><br>
+          <strong>② Alloy steels.</strong> Add Cr, Mo, Ni, V for strength, hardenability and heat resistance — e.g. 4140 Cr-Mo.
+        </div>
+        <div class="infobox">
+          <strong>③ Stainless steels</strong> (≥10.5% chromium → self-healing oxide layer). Four sub-types: austenitic (304/316), ferritic (430), martensitic (410), duplex (2205).<br><br>
+          <strong>④ Tool steels.</strong> High carbon + carbide formers (D2, M2, H13). Built for hardness and wear — they make the tools that shape everything else.
+        </div>
+      </div>
+    </div>
+    <div class="card full">
+      <h3><svg><use href="#i-layers"/></svg>Grade Library — Composition &amp; Typical Properties</h3>
+      <div class="note">Typical published datasheet values (ASM / MatWeb), standard tempers. Read carbon % and yield strength together.</div>
+      <div class="scroll">
+        <table class="tbl">
+          <thead><tr><th>Grade</th><th>Family</th><th>C %</th><th>Key alloy</th><th>Yield (MPa)</th><th>Tensile (MPa)</th><th>Elong %</th><th>Typical use</th></tr></thead>
+          <tbody id="gradeRows"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROPERTIES -->
+  <div class="panel" id="props">
+    <div class="grid">
+      <div class="card full">
+        <h3><svg><use href="#i-ruler"/></svg>The Strength–Ductility Trade-off (every grade plotted)</h3>
+        <div class="note">The classic materials map. Up = stronger, right = more stretch before it breaks. You usually can't have both — except where modern metallurgy cheats (top-right: duplex, auto dual-phase, maraging).</div>
+        <div class="legendrow">
+          <span><span class="dot" style="background:var(--steel)"></span>Carbon / HSLA</span>
+          <span><span class="dot" style="background:var(--violet)"></span>Alloy / Tool</span>
+          <span><span class="dot" style="background:var(--teal)"></span>Stainless</span>
+          <span><span class="dot" style="background:var(--molten)"></span>Advanced / auto</span>
+        </div>
+        <div class="chartbox tall"><canvas id="ashby"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Carbon Content → Hardness</h3>
+        <div class="note">The single most important lever in steel. More carbon locks the iron lattice → higher hardness, lower ductility.</div>
+        <div class="chartbox"><canvas id="carbonHard"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Yield Strength by Grade (MPa)</h3>
+        <div class="note">From mild structural steel (250 MPa) to maraging steel (1,900 MPa) — a ~7.6× span within "steel."</div>
+        <div class="chartbox"><canvas id="yieldBar"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GREEN -->
+  <div class="panel" id="green">
+    <div class="kpis">
+      <div class="kpi"><div class="lbl">Steel's share of global CO₂</div><div class="val">~11%</div><div class="delta down">≈7% of all greenhouse gases</div></div>
+      <div class="kpi"><div class="lbl">BF-BOF (coal route)</div><div class="val">2.2 t</div><div class="delta down">CO₂ per tonne of steel</div></div>
+      <div class="kpi"><div class="lbl">EAF (scrap route)</div><div class="val">0.3 t</div><div class="delta up">~7× cleaner per tonne</div></div>
+      <div class="kpi"><div class="lbl">New capacity going EAF</div><div class="val">93%</div><div class="delta up">of 2024 announcements</div></div>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <h3><svg><use href="#i-leaf"/></svg>How the World's Steel Is Made (2024)</h3>
+        <div class="note">70% still comes from coal-fired blast furnaces. That single fact is why steel is one of the hardest sectors to decarbonise.</div>
+        <div class="chartbox"><canvas id="routeDonut"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Clean-Route (EAF) Share by Region</h3>
+        <div class="note">The decarbonisation map is lopsided: Italy &amp; the US run mostly on electric scrap-melting; China — 54% of world output — is still 90% coal-based.</div>
+        <div class="chartbox"><canvas id="eafBar"></canvas></div>
+      </div>
+      <div class="card full">
+        <h3>Why It Matters</h3>
+        <div class="infobox" style="margin-bottom:0">
+          Decarbonising steel isn't optional — at ~11% of global CO₂, fixing steel matters as much as fixing aviation and shipping put together. Two levers dominate: <strong>switch the route</strong> (coal blast furnace → electric arc furnace fed with scrap or green-hydrogen "DRI"), and <strong>get the electricity clean</strong>. The catch is geographic: the country that makes more than half the world's steel — China — runs almost entirely on the dirty route, while it owns most of the scrap and capacity needed for the clean one. The next decade of steel is a data story about <strong>scrap availability, electricity prices, and hydrogen cost curves.</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Data: World Steel Association (World Steel in Figures 2025; Dec-2024 &amp; Dec-2025 production releases) · GMK Center · Carbon Brief · SteelWatch · USGS (other-metal output) · ASM Metals Handbook / MatWeb (typical property values). Scale comparisons: Eiffel Tower 10,100 t; Empire State Building ~60,000 t structural steel; ~0.9 t steel/car.<br>
+    Production in Mt (million tonnes) of crude steel. Property values are typical published datasheet figures for standard tempers — illustrative, not specification.<br>
+    Built by Ibtisam Ahmed Khan · June 2026 · Materials Data Series No. 01 — Steel · linkedin.com/in/ibtisam-ahmed-khan
+  </footer>
+</div>
+
+<script>
+Chart.defaults.color='#9aa6b8';
+Chart.defaults.borderColor='rgba(154,166,184,.12)';
+Chart.defaults.font.family="'Fira Sans',system-ui,sans-serif";
+Chart.defaults.plugins.tooltip.backgroundColor='#1a2230';
+Chart.defaults.plugins.tooltip.padding=12;
+Chart.defaults.plugins.tooltip.cornerRadius=10;
+Chart.defaults.plugins.tooltip.titleFont={family:"'Fira Code',monospace"};
+const reduce=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+Chart.defaults.animation=reduce?false:{duration:900,easing:'easeOutQuart'};
+
+const C={steel:'#8ba3bd',molten:'#ff7a4d',amber:'#ffb13d',teal:'#34dbf0',green:'#3ee0a4',red:'#ff6363',violet:'#b79cff',mute:'#3a4860'};
+
+const countries=[
+ {n:'China',v:1005.1,riser:false},{n:'India',v:149.6,riser:true},
+ {n:'Japan',v:84.0,riser:false},{n:'United States',v:79.5,riser:false},
+ {n:'Russia',v:70.7,riser:false},{n:'South Korea',v:63.5,riser:false},
+ {n:'Germany',v:37.2,riser:false},{n:'Turkey',v:36.9,riser:false},
+ {n:'Brazil',v:33.7,riser:false},{n:'Iran',v:31.0,riser:false}];
+
+const grades=[
+ {g:'AISI 1018',cat:'Low-carbon',c:0.18,al:'—',y:370,t:440,e:15,hb:126,use:'General structural, shafts',fam:'carbon'},
+ {g:'ASTM A36',cat:'Low-carbon',c:0.26,al:'—',y:250,t:450,e:20,hb:119,use:'Structural steel / beams',fam:'carbon'},
+ {g:'AISI 1045',cat:'Medium-carbon',c:0.45,al:'—',y:530,t:625,e:12,hb:170,use:'Axles, gears, bolts',fam:'carbon'},
+ {g:'AISI 1095',cat:'High-carbon',c:0.95,al:'—',y:525,t:685,e:10,hb:197,use:'Springs, cutting tools',fam:'carbon'},
+ {g:'HSLA A572-50',cat:'HSLA',c:0.23,al:'Nb/V',y:345,t:450,e:18,hb:150,use:'Bridges, cranes',fam:'carbon'},
+ {g:'AISI 4140',cat:'Alloy',c:0.40,al:'Cr-Mo',y:655,t:1020,e:18,hb:302,use:'Heavy-duty gears, shafts',fam:'alloy'},
+ {g:'AISI 304',cat:'Stainless-Austenitic',c:0.08,al:'18Cr-8Ni',y:215,t:505,e:40,hb:201,use:'Food, kitchens, tanks',fam:'stainless'},
+ {g:'AISI 316',cat:'Stainless-Austenitic',c:0.08,al:'Cr-Ni-Mo',y:205,t:515,e:40,hb:217,use:'Marine, chemical, medical',fam:'stainless'},
+ {g:'AISI 430',cat:'Stainless-Ferritic',c:0.12,al:'17Cr',y:275,t:450,e:22,hb:183,use:'Trim, appliances',fam:'stainless'},
+ {g:'AISI 410',cat:'Stainless-Martensitic',c:0.15,al:'12Cr',y:275,t:515,e:20,hb:217,use:'Cutlery, valves',fam:'stainless'},
+ {g:'Duplex 2205',cat:'Stainless-Duplex',c:0.03,al:'22Cr-5Ni',y:450,t:655,e:25,hb:293,use:'Oil & gas, vessels',fam:'advanced'},
+ {g:'AISI D2',cat:'Tool steel',c:1.50,al:'12Cr-Mo-V',y:1500,t:1900,e:5,hb:600,use:'Dies, blanking tools',fam:'alloy'},
+ {g:'Maraging 300',cat:'Maraging',c:0.03,al:'18Ni-Co-Mo',y:1900,t:1960,e:10,hb:550,use:'Aerospace, tooling',fam:'advanced'},
+ {g:'DP600',cat:'Auto dual-phase',c:0.10,al:'Mn-Cr',y:350,t:600,e:24,hb:190,use:'Car crash panels',fam:'advanced'}];
+const famColor={carbon:C.steel,alloy:C.violet,stainless:C.teal,advanced:C.molten};
+
+const trend=[[2019,1874.4],[2020,1880.4],[2021,1960.4],[2022,1888.7],[2023,1888.2],[2024,1882.6],[2025,1849.4]];
+const enduse=[['Buildings & infrastructure',52],['Mechanical equipment',16],['Automotive',12],['Metal products',10],['Other transport',5],['Electrical',3],['Appliances',2]];
+const route=[['BF-BOF (coal)',70.4],['EAF (electric)',29.1],['Other',0.5]];
+const eaf=[['Italy',89.3],['United States',71.8],['European Union',44.4],['World avg',29.1],['China',10.2]];
+const metals=[['Steel',1850],['Aluminium',70],['Copper',26],['Zinc',12],['Lead',12],['Nickel',3.6]];
+
+/* Production */
+new Chart(countryBar,{type:'bar',
+ data:{labels:countries.map(c=>c.n),datasets:[{data:countries.map(c=>c.v),
+   backgroundColor:countries.map(c=>c.riser?C.molten:C.steel),borderRadius:8,maxBarThickness:38}]},
+ options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw} Mt · ${(c.raw/1882.6*100).toFixed(1)}% of world`}}},
+  scales:{x:{title:{display:true,text:'2024 crude steel production (Mt)'}},y:{grid:{display:false},ticks:{font:{size:12.5,weight:'600'},color:'#eef2f8'}}}}});
+
+new Chart(trendLine,{type:'line',
+ data:{labels:trend.map(t=>t[0]),datasets:[{label:'World crude steel',data:trend.map(t=>t[1]),
+   borderColor:C.molten,backgroundColor:'rgba(255,122,77,.12)',fill:true,tension:.35,borderWidth:3,
+   pointRadius:5,pointHoverRadius:8,pointBackgroundColor:'#0c0f14',pointBorderColor:C.molten,pointBorderWidth:2.5}]},
+ options:{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw} Mt`}}},
+  scales:{y:{title:{display:true,text:'Mt'},min:1700},x:{grid:{display:false}}}}});
+
+new Chart(enduseDonut,{type:'doughnut',
+ data:{labels:enduse.map(e=>e[0]+' '+e[1]+'%'),datasets:[{data:enduse.map(e=>e[1]),
+   backgroundColor:[C.steel,C.violet,C.molten,C.amber,C.teal,C.green,C.mute],borderColor:'#0c0f14',borderWidth:3,hoverOffset:12}]},
+ options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
+  plugins:{legend:{position:'right',labels:{usePointStyle:true,pointStyle:'circle',padding:9,font:{size:11.5}}},
+   tooltip:{callbacks:{label:c=>` ${c.label}`}}}}});
+
+/* Scale: metals bar */
+new Chart(metalsBar,{type:'bar',
+ data:{labels:metals.map(m=>m[0]),datasets:[{data:metals.map(m=>m[1]),
+   backgroundColor:metals.map(m=>m[0]==='Steel'?C.molten:C.steel),borderRadius:8,maxBarThickness:54}]},
+ options:{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw} Mt/yr`}}},
+  scales:{y:{title:{display:true,text:'Annual world production (Mt)'}},x:{grid:{display:false},ticks:{font:{size:13,weight:'600'},color:'#eef2f8'}}}}});
+
+/* Types table */
+const famPill={carbon:C.steel,alloy:C.violet,stainless:C.teal,advanced:C.molten};
+document.getElementById('gradeRows').innerHTML=grades.map(r=>`<tr>
+ <td style="font-weight:700">${r.g}</td>
+ <td><span class="pill" style="background:${famPill[r.fam]}22;color:${famPill[r.fam]}">${r.cat}</span></td>
+ <td class="mono">${r.c.toFixed(2)}</td><td style="color:#9aa6b8">${r.al}</td>
+ <td class="mono" style="font-weight:700">${r.y}</td><td class="mono">${r.t}</td><td class="mono">${r.e}</td>
+ <td style="color:#9aa6b8">${r.use}</td></tr>`).join('');
+
+/* Properties */
+new Chart(ashby,{type:'scatter',
+ data:{datasets:grades.map(r=>({label:r.g,data:[{x:r.e,y:r.y,g:r.g,t:r.t}],
+   backgroundColor:famColor[r.fam],borderColor:'#0c0f14',borderWidth:1.5,pointRadius:9,pointHoverRadius:13}))},
+ options:{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{callbacks:{
+    title:c=>c[0].raw.g,label:c=>[` Yield: ${c.raw.y} MPa`,` Elongation: ${c.raw.x}%`,` Tensile: ${c.raw.t} MPa`]}}},
+  scales:{x:{title:{display:true,text:'Elongation at break (%) →  more ductile'},min:0,max:45},
+   y:{title:{display:true,text:'Yield strength (MPa) →  stronger'},min:0,max:2050}}}});
+
+new Chart(carbonHard,{type:'scatter',
+ data:{datasets:[{data:grades.map(r=>({x:r.c,y:r.hb,g:r.g})),
+   backgroundColor:grades.map(r=>famColor[r.fam]),pointRadius:8,pointHoverRadius:12,borderColor:'#0c0f14',borderWidth:1.5}]},
+ options:{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>c[0].raw.g,label:c=>[` Carbon: ${c.raw.x}%`,` Hardness: ${c.raw.y} HB`]}}},
+  scales:{x:{title:{display:true,text:'Carbon content (%)'},min:0},y:{title:{display:true,text:'Hardness (HB)'},min:0}}}});
+
+const ys=[...grades].sort((a,b)=>a.y-b.y);
+new Chart(yieldBar,{type:'bar',
+ data:{labels:ys.map(r=>r.g),datasets:[{data:ys.map(r=>r.y),backgroundColor:ys.map(r=>famColor[r.fam]),borderRadius:6,maxBarThickness:22}]},
+ options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw} MPa yield`}}},
+  scales:{x:{title:{display:true,text:'Yield strength (MPa)'}},y:{grid:{display:false},ticks:{font:{size:11}}}}}});
+
+/* Green */
+new Chart(routeDonut,{type:'doughnut',
+ data:{labels:route.map(r=>r[0]+' '+r[1]+'%'),datasets:[{data:route.map(r=>r[1]),
+   backgroundColor:[C.red,C.green,C.mute],borderColor:'#0c0f14',borderWidth:3,hoverOffset:12}]},
+ options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+  plugins:{legend:{position:'bottom',labels:{usePointStyle:true,pointStyle:'circle',padding:12,font:{size:12}}},
+   tooltip:{callbacks:{label:c=>` ${c.label} of 2024 output`}}}}});
+
+new Chart(eafBar,{type:'bar',
+ data:{labels:eaf.map(e=>e[0]),datasets:[{data:eaf.map(e=>e[1]),
+   backgroundColor:eaf.map(e=>e[0]==='China'?C.red:e[0]==='World avg'?C.amber:C.green),borderRadius:7,maxBarThickness:40}]},
+ options:{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw}% made via clean EAF route`}}},
+  scales:{y:{max:100,title:{display:true,text:'EAF share (%)'},ticks:{callback:v=>v+'%'}},x:{grid:{display:false},ticks:{font:{size:12,weight:'600'},color:'#eef2f8'}}}}});
+
+/* Tabs */
+const tabs=document.querySelectorAll('.tab');
+tabs.forEach(t=>t.addEventListener('click',()=>{
+ tabs.forEach(x=>{x.classList.remove('active');x.setAttribute('aria-selected','false')});
+ document.querySelectorAll('.panel').forEach(x=>x.classList.remove('show'));
+ t.classList.add('active');t.setAttribute('aria-selected','true');
+ document.getElementById(t.dataset.p).classList.add('show');
+ if(history.replaceState)history.replaceState(null,'','#'+t.dataset.p);
+}));
+/* deep-link: open the tab named in the URL hash on load */
+const h=location.hash.replace('#','');
+if(h){const t=document.querySelector(`.tab[data-p="${h}"]`);if(t)t.click();}
+</script>
+</body>
+</html>

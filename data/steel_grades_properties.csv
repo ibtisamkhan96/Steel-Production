@@ -1,0 +1,15 @@
+grade,category,carbon_pct,key_alloy,yield_mpa,tensile_mpa,elongation_pct,hardness_hb,density_g_cc,typical_use
+AISI 1018,Low-carbon,0.18,—,370,440,15,126,7.87,"General structural, shafts"
+ASTM A36,Low-carbon,0.26,—,250,450,20,119,7.85,Structural steel / beams
+AISI 1045,Medium-carbon,0.45,—,530,625,12,170,7.85,"Axles, gears, bolts"
+AISI 1095,High-carbon,0.95,—,525,685,10,197,7.85,"Springs, cutting tools"
+HSLA A572-50,HSLA,0.23,Nb/V,345,450,18,150,7.85,"Bridges, cranes (light+strong)"
+AISI 4140,Alloy,0.4,Cr-Mo,655,1020,18,302,7.85,"Heavy-duty gears, shafts"
+AISI 304,Stainless-Austenitic,0.08,18Cr-8Ni,215,505,40,201,8.0,"Food, kitchens, tanks"
+AISI 316,Stainless-Austenitic,0.08,Cr-Ni-Mo,205,515,40,217,8.0,"Marine, chemical, medical"
+AISI 430,Stainless-Ferritic,0.12,17Cr,275,450,22,183,7.75,"Trim, appliances"
+AISI 410,Stainless-Martensitic,0.15,12Cr,275,515,20,217,7.75,"Cutlery, valves"
+Duplex 2205,Stainless-Duplex,0.03,22Cr-5Ni,450,655,25,293,7.8,"Oil & gas, pressure vessels"
+AISI D2,Tool steel,1.5,12Cr-Mo-V,1500,1900,5,600,7.7,"Dies, blanking tools"
+Maraging 300,Maraging,0.03,18Ni-Co-Mo,1900,1960,10,550,8.0,"Aerospace, tooling"
+DP600,Auto dual-phase,0.1,Mn-Cr,350,600,24,190,7.85,Car body panels (crash)
